@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { LevelConfig, WallConfig, BumperConfig, FlipperConfig, ElementType } from "../levels/types";
+import { LevelConfig, WallConfig, BumperConfig, FlipperConfig, SlingConfig, KickerConfig, LaneGuideConfig, ElementType } from "../levels/types";
 import { TABLE_WIDTH, WALL_THICKNESS, BUMPER_RADIUS_PX } from "../constants";
 import { defaultLevel } from "../levels/defaultLevel";
 
@@ -45,6 +45,24 @@ export function useEditorState() {
     setSelectedId(flipper.id);
   }, []);
 
+  const addSling = useCallback((cx: number, cy: number, isLeft: boolean) => {
+    const sling: SlingConfig = { id: uid("sling"), cx, cy, rotation: isLeft ? -0.5 : 0.5, isLeft };
+    setLevel((prev) => ({ ...prev, slings: [...(prev.slings ?? []), sling] }));
+    setSelectedId(sling.id);
+  }, []);
+
+  const addKicker = useCallback((cx: number, cy: number) => {
+    const kicker: KickerConfig = { id: uid("kick"), cx, cy, radius: 12 };
+    setLevel((prev) => ({ ...prev, kickers: [...(prev.kickers ?? []), kicker] }));
+    setSelectedId(kicker.id);
+  }, []);
+
+  const addLaneGuide = useCallback((cx: number, cy: number) => {
+    const lg: LaneGuideConfig = { id: uid("lane"), cx, cy, hw: 2, hh: 25 };
+    setLevel((prev) => ({ ...prev, laneGuides: [...(prev.laneGuides ?? []), lg] }));
+    setSelectedId(lg.id);
+  }, []);
+
   const setBallSpawn = useCallback((x: number, y: number) => {
     setLevel((prev) => ({ ...prev, ballSpawn: { x, y } }));
   }, []);
@@ -56,7 +74,10 @@ export function useEditorState() {
       const flippers = prev.flippers.map((f) =>
         f.id === id ? { ...f, anchorX: cx, anchorY: cy } : f
       );
-      return { ...prev, walls, bumpers, flippers };
+      const slings = (prev.slings ?? []).map((s) => (s.id === id ? { ...s, cx, cy } : s));
+      const kickers = (prev.kickers ?? []).map((k) => (k.id === id ? { ...k, cx, cy } : k));
+      const laneGuides = (prev.laneGuides ?? []).map((lg) => (lg.id === id ? { ...lg, cx, cy } : lg));
+      return { ...prev, walls, bumpers, flippers, slings, kickers, laneGuides };
     });
   }, []);
 
@@ -66,6 +87,9 @@ export function useEditorState() {
       walls: prev.walls.filter((w) => w.id !== id),
       bumpers: prev.bumpers.filter((b) => b.id !== id),
       flippers: prev.flippers.filter((f) => f.id !== id),
+      slings: (prev.slings ?? []).filter((s) => s.id !== id),
+      kickers: (prev.kickers ?? []).filter((k) => k.id !== id),
+      laneGuides: (prev.laneGuides ?? []).filter((lg) => lg.id !== id),
     }));
     setSelectedId(null);
   }, []);
@@ -100,6 +124,9 @@ export function useEditorState() {
       walls: [],
       bumpers: [],
       flippers: [],
+      slings: [],
+      kickers: [],
+      laneGuides: [],
     });
     setSelectedId(null);
   }, []);
@@ -113,6 +140,9 @@ export function useEditorState() {
     addWall,
     addBumper,
     addFlipper,
+    addSling,
+    addKicker,
+    addLaneGuide,
     setBallSpawn,
     moveElement,
     deleteElement,

@@ -5,6 +5,7 @@ import {
   BUMPER_RADIUS_PX,
   FLIPPER_WIDTH,
   FLIPPER_HEIGHT,
+  FLIPPER_TIP_HEIGHT,
   BALL_RADIUS_PX,
 } from "../constants";
 
@@ -68,21 +69,27 @@ export function renderEditor(
     }
   }
 
-  // Flippers
+  // Flippers (tapered shape)
   for (const flipper of level.flippers) {
     const isSelected = flipper.id === selectedId;
     ctx.save();
     ctx.translate(flipper.anchorX, flipper.anchorY);
     ctx.fillStyle = isSelected ? "#60a5fa" : "#3b82f6";
     ctx.beginPath();
-    const offsetX = flipper.isLeft ? 0 : -FLIPPER_WIDTH;
-    ctx.roundRect(
-      offsetX,
-      -FLIPPER_HEIGHT / 2,
-      FLIPPER_WIDTH,
-      FLIPPER_HEIGHT,
-      FLIPPER_HEIGHT / 2
-    );
+    const baseH = FLIPPER_HEIGHT / 2;
+    const tipH = FLIPPER_TIP_HEIGHT / 2;
+    if (flipper.isLeft) {
+      ctx.moveTo(0, -baseH);
+      ctx.lineTo(FLIPPER_WIDTH, -tipH);
+      ctx.lineTo(FLIPPER_WIDTH, tipH);
+      ctx.lineTo(0, baseH);
+    } else {
+      ctx.moveTo(0, -baseH);
+      ctx.lineTo(-FLIPPER_WIDTH, -tipH);
+      ctx.lineTo(-FLIPPER_WIDTH, tipH);
+      ctx.lineTo(0, baseH);
+    }
+    ctx.closePath();
     ctx.fill();
     if (isSelected) {
       ctx.strokeStyle = "#93c5fd";
@@ -94,6 +101,58 @@ export function renderEditor(
     ctx.arc(0, 0, 4, 0, Math.PI * 2);
     ctx.fillStyle = "#fff";
     ctx.fill();
+    ctx.restore();
+  }
+
+  // Slingshots
+  for (const sling of level.slings ?? []) {
+    const isSelected = sling.id === selectedId;
+    ctx.save();
+    ctx.translate(sling.cx, sling.cy);
+    ctx.rotate(sling.rotation ?? 0);
+    ctx.fillStyle = isSelected ? "#fb923c" : "#f97316";
+    ctx.fillRect(-45, -4, 90, 8);
+    if (isSelected) {
+      ctx.strokeStyle = "#60a5fa";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-45, -4, 90, 8);
+    }
+    ctx.restore();
+  }
+
+  // Kickers
+  for (const kicker of level.kickers ?? []) {
+    const isSelected = kicker.id === selectedId;
+    const r = kicker.radius ?? 12;
+    ctx.beginPath();
+    ctx.arc(kicker.cx, kicker.cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = isSelected ? "#f87171" : "#ef4444";
+    ctx.fill();
+    if (isSelected) {
+      ctx.strokeStyle = "#60a5fa";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(kicker.cx, kicker.cy, r * 0.5, 0, Math.PI * 2);
+    ctx.strokeStyle = "#fca5a5";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Lane guides
+  for (const lg of level.laneGuides ?? []) {
+    const isSelected = lg.id === selectedId;
+    ctx.save();
+    ctx.translate(lg.cx, lg.cy);
+    ctx.rotate(lg.rotation ?? 0);
+    ctx.fillStyle = isSelected ? "#6b7280" : "#4b5563";
+    ctx.fillRect(-lg.hw, -lg.hh, lg.hw * 2, lg.hh * 2);
+    if (isSelected) {
+      ctx.strokeStyle = "#60a5fa";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-lg.hw, -lg.hh, lg.hw * 2, lg.hh * 2);
+    }
     ctx.restore();
   }
 
@@ -124,8 +183,23 @@ export function renderEditor(
     } else if (activeTool === "flipper") {
       ctx.fillStyle = "#3b82f6";
       ctx.beginPath();
-      ctx.roundRect(hoverPos.x, hoverPos.y - FLIPPER_HEIGHT / 2, FLIPPER_WIDTH, FLIPPER_HEIGHT, FLIPPER_HEIGHT / 2);
+      ctx.moveTo(hoverPos.x, hoverPos.y - FLIPPER_HEIGHT / 2);
+      ctx.lineTo(hoverPos.x + FLIPPER_WIDTH, hoverPos.y - FLIPPER_TIP_HEIGHT / 2);
+      ctx.lineTo(hoverPos.x + FLIPPER_WIDTH, hoverPos.y + FLIPPER_TIP_HEIGHT / 2);
+      ctx.lineTo(hoverPos.x, hoverPos.y + FLIPPER_HEIGHT / 2);
+      ctx.closePath();
       ctx.fill();
+    } else if (activeTool === "sling") {
+      ctx.fillStyle = "#f97316";
+      ctx.fillRect(hoverPos.x - 45, hoverPos.y - 4, 90, 8);
+    } else if (activeTool === "kicker") {
+      ctx.beginPath();
+      ctx.arc(hoverPos.x, hoverPos.y, 12, 0, Math.PI * 2);
+      ctx.fillStyle = "#ef4444";
+      ctx.fill();
+    } else if (activeTool === "laneGuide") {
+      ctx.fillStyle = "#4b5563";
+      ctx.fillRect(hoverPos.x - 2, hoverPos.y - 25, 4, 50);
     } else if (activeTool === "ballSpawn") {
       ctx.beginPath();
       ctx.arc(hoverPos.x, hoverPos.y, BALL_RADIUS_PX, 0, Math.PI * 2);
@@ -153,6 +227,14 @@ export function hitTest(
     }
   }
 
+  // Check kickers
+  for (const k of level.kickers ?? []) {
+    const r = k.radius ?? 12;
+    const dx = x - k.cx;
+    const dy = y - k.cy;
+    if (dx * dx + dy * dy < r * r) return k.id;
+  }
+
   // Check bumpers
   for (const b of level.bumpers) {
     const r = b.radius ?? BUMPER_RADIUS_PX;
@@ -161,9 +243,18 @@ export function hitTest(
     if (dx * dx + dy * dy < r * r) return b.id;
   }
 
+  // Check slings
+  for (const s of level.slings ?? []) {
+    if (Math.abs(x - s.cx) < 50 && Math.abs(y - s.cy) < 10) return s.id;
+  }
+
+  // Check lane guides
+  for (const lg of level.laneGuides ?? []) {
+    if (Math.abs(x - lg.cx) < lg.hw + 4 && Math.abs(y - lg.cy) < lg.hh + 4) return lg.id;
+  }
+
   // Check walls
   for (const w of level.walls) {
-    // Simple AABB (ignoring rotation for hit test simplicity)
     if (
       Math.abs(x - w.cx) < w.hw + 4 &&
       Math.abs(y - w.cy) < w.hh + 4

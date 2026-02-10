@@ -68,27 +68,86 @@ export default function PinballGame({ level, onBack }: Props) {
       resetBall(bodies.ball, TABLE_WIDTH);
     }
 
-    // Simple bumper collision scoring
-    for (const bumper of bodies.bumpers) {
-      const bPos = bumper.translation();
+    // Proximity-based scoring helper
+    const checkHit = (body: RAPIER.RigidBody, hitDist: number, points: number) => {
+      const bPos = body.translation();
       const dx = ballPos.x - bPos.x;
       const dy = ballPos.y - bPos.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < px(30)) {
+      if (dx * dx + dy * dy < px(hitDist) * px(hitDist)) {
         const vel = bodies.ball.linvel();
-        const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y);
-        if (speed > 1.5) {
-          scoreRef.current += 100;
+        if (vel.x * vel.x + vel.y * vel.y > 2) {
+          scoreRef.current += points;
+          setScore(scoreRef.current);
+        }
+      }
+    };
+
+    // Bumper hits (100 pts)
+    for (const bumper of bodies.bumpers) checkHit(bumper, 30, 100);
+    // Slingshot hits (50 pts)
+    for (const sling of bodies.slings) checkHit(sling, 50, 50);
+    // Kicker hits (200 pts)
+    for (const kicker of bodies.kickers) checkHit(kicker, 20, 200);
+
+    // Card target hits (500 pts each, jackpot if all 4 hit)
+    for (let i = 0; i < bodies.cardTargets.length; i++) {
+      if (bodies.cardHitState[i]) continue;
+      const ct = bodies.cardTargets[i];
+      const cPos = ct.translation();
+      const dx = ballPos.x - cPos.x;
+      const dy = ballPos.y - cPos.y;
+      if (dx * dx + dy * dy < px(22) * px(22)) {
+        const vel = bodies.ball.linvel();
+        if (vel.x * vel.x + vel.y * vel.y > 1.5) {
+          bodies.cardHitState[i] = true;
+          scoreRef.current += 500;
+          setScore(scoreRef.current);
+
+          // Check for jackpot (all cards hit)
+          if (bodies.cardHitState.every(Boolean) && !bodies.jackpotTriggered) {
+            bodies.jackpotTriggered = true;
+            bodies.jackpotTimer = 120; // ~2 seconds at 60fps
+            scoreRef.current += 10000;
+            setScore(scoreRef.current);
+          }
+        }
+      }
+    }
+
+    // Icon target hits (1000 pts each, one-time)
+    for (let i = 0; i < bodies.iconTargets.length; i++) {
+      if (bodies.iconHitState[i]) continue;
+      const it = bodies.iconTargets[i];
+      const iPos = it.translation();
+      const dix = ballPos.x - iPos.x;
+      const diy = ballPos.y - iPos.y;
+      if (dix * dix + diy * diy < px(22) * px(22)) {
+        const vel = bodies.ball.linvel();
+        if (vel.x * vel.x + vel.y * vel.y > 1.5) {
+          bodies.iconHitState[i] = true;
+          scoreRef.current += 1000;
           setScore(scoreRef.current);
         }
       }
     }
 
+    // Tick jackpot animation
+    if (bodies.jackpotTimer > 0) {
+      bodies.jackpotTimer--;
+      if (bodies.jackpotTimer <= 0) {
+        // Reset cards for next round
+        bodies.cardHitState.fill(false);
+        bodies.jackpotTriggered = false;
+      }
+    }
+
     // Render
-    render(ctx, world, bodies, scoreRef.current);
+    const cardLbls = (level.cardTargets ?? []).map((ct) => ct.label);
+    const iconLbls = (level.iconTargets ?? []).map((it) => it.label);
+    render(ctx, world, bodies, scoreRef.current, cardLbls, iconLbls);
 
     animRef.current = requestAnimationFrame(gameLoop);
-  }, [world]);
+  }, [world, level]);
 
   // Initialize game bodies
   useEffect(() => {
@@ -113,8 +172,8 @@ export default function PinballGame({ level, onBack }: Props) {
         const ball = bodiesRef.current.ball;
         ball.applyImpulse(
           new RAPIER.Vector2(
-            (Math.random() - 0.5) * 0.5,
-            -PLUNGER_FORCE / 100
+            (Math.random() - 0.5) * 0.15,
+            -PLUNGER_FORCE / 37.5
           ),
           true
         );

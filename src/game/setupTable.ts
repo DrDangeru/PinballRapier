@@ -18,6 +18,15 @@ export interface GameBodies {
   leftFlipperJoint: RAPIER.RevoluteImpulseJoint;
   rightFlipperJoint: RAPIER.RevoluteImpulseJoint;
   bumpers: RAPIER.RigidBody[];
+  slings: RAPIER.RigidBody[];
+  kickers: RAPIER.RigidBody[];
+  laneGuides: RAPIER.RigidBody[];
+  cardTargets: RAPIER.RigidBody[];
+  cardHitState: boolean[];
+  iconTargets: RAPIER.RigidBody[];
+  iconHitState: boolean[];
+  jackpotTriggered: boolean;
+  jackpotTimer: number;
 }
 
 function addWall(
@@ -161,6 +170,16 @@ export function setupTable(world: RAPIER.World): GameBodies {
     leftFlipperJoint: left.joint,
     rightFlipperJoint: right.joint,
     bumpers,
+    slings: [],
+    kickers: [],
+    laneGuides: [],
+    cardTargets: [],
+    cardHitState: [],
+    jackpotTriggered: false,
+    jackpotTimer: 0,
+    iconTargets: [],
+    iconHitState: [],
+    
   };
 }
 

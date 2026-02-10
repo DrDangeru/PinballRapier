@@ -6,6 +6,7 @@ import {
   BUMPER_RESTITUTION,
   FLIPPER_WIDTH,
   FLIPPER_HEIGHT,
+  FLIPPER_TIP_HEIGHT,
   px,
 } from "../constants";
 import { GameBodies } from "../game/setupTable";
@@ -56,13 +57,29 @@ function addFlipper(
     .setAngularDamping(2.0);
   const flipper = world.createRigidBody(flipperDesc);
 
-  const colliderDesc = RAPIER.ColliderDesc.cuboid(
-    px(FLIPPER_WIDTH / 2),
-    px(FLIPPER_HEIGHT / 2)
-  )
-    .setDensity(5.0)
-    .setRestitution(0.2);
-  world.createCollider(colliderDesc, flipper);
+  // Tapered flipper: wide base near pivot, narrow tip
+  const baseHW = px(FLIPPER_WIDTH * 0.3);
+  const baseHH = px(FLIPPER_HEIGHT / 2);
+  const tipHW = px(FLIPPER_WIDTH * 0.25);
+  const tipHH = px(FLIPPER_TIP_HEIGHT / 2);
+  const dir = isLeft ? 1 : -1;
+
+  // Base collider (near pivot)
+  world.createCollider(
+    RAPIER.ColliderDesc.cuboid(baseHW, baseHH)
+      .setTranslation(px(-dir * FLIPPER_WIDTH * 0.2), 0)
+      .setDensity(5.0)
+      .setRestitution(0.2),
+    flipper
+  );
+  // Tip collider (far from pivot)
+  world.createCollider(
+    RAPIER.ColliderDesc.cuboid(tipHW, tipHH)
+      .setTranslation(px(dir * FLIPPER_WIDTH * 0.2), 0)
+      .setDensity(3.0)
+      .setRestitution(0.3),
+    flipper
+  );
 
   const jointParams = RAPIER.JointData.revolute(
     new RAPIER.Vector2(0.0, 0.0),
@@ -76,6 +93,97 @@ function addFlipper(
   return { flipper, joint };
 }
 
+function addSling(
+  world: RAPIER.World,
+  cx: number,
+  cy: number,
+  rotation: number,
+  _isLeft: boolean
+) {
+  const bodyDesc = RAPIER.RigidBodyDesc.fixed()
+    .setTranslation(px(cx), px(cy))
+    .setRotation(rotation);
+  const body = world.createRigidBody(bodyDesc);
+  // Slingshot: angled wall with high restitution to kick the ball
+  world.createCollider(
+    RAPIER.ColliderDesc.cuboid(px(45), px(4))
+      .setRestitution(1.8)
+      .setFriction(0.0),
+    body
+  );
+  return body;
+}
+
+function addKicker(
+  world: RAPIER.World,
+  cx: number,
+  cy: number,
+  radius = 12
+) {
+  const bodyDesc = RAPIER.RigidBodyDesc.fixed().setTranslation(px(cx), px(cy));
+  const body = world.createRigidBody(bodyDesc);
+  // Kicker: small circle with very high restitution
+  world.createCollider(
+    RAPIER.ColliderDesc.ball(px(radius))
+      .setRestitution(2.5),
+    body
+  );
+  return body;
+}
+
+function addLaneGuide(
+  world: RAPIER.World,
+  cx: number,
+  cy: number,
+  hw: number,
+  hh: number,
+  rotation = 0
+) {
+  const bodyDesc = RAPIER.RigidBodyDesc.fixed()
+    .setTranslation(px(cx), px(cy))
+    .setRotation(rotation);
+  const body = world.createRigidBody(bodyDesc);
+  world.createCollider(
+    RAPIER.ColliderDesc.cuboid(px(hw), px(hh))
+      .setRestitution(0.1)
+      .setFriction(0.5),
+    body
+  );
+  return body;
+}
+
+function addCardTarget(
+  world: RAPIER.World,
+  cx: number,
+  cy: number
+) {
+  const bodyDesc = RAPIER.RigidBodyDesc.fixed().setTranslation(px(cx), px(cy));
+  const body = world.createRigidBody(bodyDesc);
+  // Card target: small rectangular collider
+  world.createCollider(
+    RAPIER.ColliderDesc.cuboid(px(14), px(10))
+      .setRestitution(0.6),
+    body
+  );
+  return body;
+}
+
+function addIconTarget(
+  world: RAPIER.World,
+  cx: number,
+  cy: number
+) {
+  const bodyDesc = RAPIER.RigidBodyDesc.fixed().setTranslation(px(cx), px(cy));
+  const body = world.createRigidBody(bodyDesc);
+  world.createCollider(
+    RAPIER.ColliderDesc.ball(px(15))
+      .setRestitution(0.5),
+    body
+  );
+  return body;
+}
+
+
 export function buildLevel(world: RAPIER.World, config: LevelConfig): GameBodies {
   // Walls
   for (const w of config.walls) {
@@ -85,6 +193,21 @@ export function buildLevel(world: RAPIER.World, config: LevelConfig): GameBodies
   // Bumpers
   const bumpers = config.bumpers.map((b) =>
     addBumper(world, b.cx, b.cy, b.radius, b.restitution)
+  );
+
+  // Slingshots
+  const slings = (config.slings ?? []).map((s) =>
+    addSling(world, s.cx, s.cy, s.rotation ?? 0, s.isLeft)
+  );
+
+  // Kickers
+  const kickers = (config.kickers ?? []).map((k) =>
+    addKicker(world, k.cx, k.cy, k.radius)
+  );
+
+  // Lane guides
+  const laneGuides = (config.laneGuides ?? []).map((lg) =>
+    addLaneGuide(world, lg.cx, lg.cy, lg.hw, lg.hh, lg.rotation ?? 0)
   );
 
   // Flippers
@@ -107,13 +230,24 @@ export function buildLevel(world: RAPIER.World, config: LevelConfig): GameBodies
   // Ball
   const ballDesc = RAPIER.RigidBodyDesc.dynamic()
     .setTranslation(px(config.ballSpawn.x), px(config.ballSpawn.y))
-    .setCcdEnabled(true);
+    .setCcdEnabled(true)
+    .setCanSleep(false);
   const ball = world.createRigidBody(ballDesc);
   const ballCollider = RAPIER.ColliderDesc.ball(BALL_RADIUS)
     .setRestitution(0.5)
     .setDensity(1.0)
-    .setFriction(0.3);
+    .setFriction(0.15);
   world.createCollider(ballCollider, ball);
+
+  // Card targets
+  const cardTargets = (config.cardTargets ?? []).map((ct) =>
+    addCardTarget(world, ct.cx, ct.cy)
+  );
+
+  // Icon targets
+  const iconTargets = (config.iconTargets ?? []).map((it) =>
+    addIconTarget(world, it.cx, it.cy)
+  );
 
   return {
     ball,
@@ -122,5 +256,15 @@ export function buildLevel(world: RAPIER.World, config: LevelConfig): GameBodies
     leftFlipperJoint: leftFlipperJoint!,
     rightFlipperJoint: rightFlipperJoint!,
     bumpers,
+    slings,
+    kickers,
+    laneGuides,
+    cardTargets,
+    cardHitState: cardTargets.map(() => false),
+    jackpotTriggered: false,
+    jackpotTimer: 0,
+    iconTargets,
+    iconHitState: iconTargets.map(() => false),
+    
   };
 }

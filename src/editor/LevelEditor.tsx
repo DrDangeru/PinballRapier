@@ -15,6 +15,9 @@ const tools: { key: ElementType | "select" | "ballSpawn"; label: string; icon: s
   { key: "wall", label: "Wall", icon: "▬" },
   { key: "bumper", label: "Bumper", icon: "●" },
   { key: "flipper", label: "Flipper", icon: "⏤" },
+  { key: "sling", label: "Slingshot", icon: "⟋" },
+  { key: "kicker", label: "Kicker", icon: "◉" },
+  { key: "laneGuide", label: "Lane Guide", icon: "│" },
   { key: "ballSpawn", label: "Ball Spawn", icon: "◎" },
 ];
 
@@ -29,6 +32,9 @@ export default function LevelEditor({ onPlay }: Props) {
     addWall,
     addBumper,
     addFlipper,
+    addSling,
+    addKicker,
+    addLaneGuide,
     setBallSpawn,
     moveElement,
     deleteElement,
@@ -83,8 +89,11 @@ export default function LevelEditor({ onPlay }: Props) {
           const wall = level.walls.find((w) => w.id === id);
           const bumper = level.bumpers.find((b) => b.id === id);
           const flipper = level.flippers.find((f) => f.id === id);
-          const ecx = wall?.cx ?? bumper?.cx ?? flipper?.anchorX ?? pos.x;
-          const ecy = wall?.cy ?? bumper?.cy ?? flipper?.anchorY ?? pos.y;
+          const sling = (level.slings ?? []).find((s) => s.id === id);
+          const kicker = (level.kickers ?? []).find((k) => k.id === id);
+          const lg = (level.laneGuides ?? []).find((l) => l.id === id);
+          const ecx = wall?.cx ?? bumper?.cx ?? flipper?.anchorX ?? sling?.cx ?? kicker?.cx ?? lg?.cx ?? pos.x;
+          const ecy = wall?.cy ?? bumper?.cy ?? flipper?.anchorY ?? sling?.cy ?? kicker?.cy ?? lg?.cy ?? pos.y;
           setDragOffset({ x: pos.x - ecx, y: pos.y - ecy });
           setDragging(id);
         }
@@ -98,12 +107,22 @@ export default function LevelEditor({ onPlay }: Props) {
         addFlipper(pos.x, pos.y, flipperSide);
         setFlipperSide(!flipperSide);
         setActiveTool("select");
+      } else if (activeTool === "sling") {
+        addSling(pos.x, pos.y, flipperSide);
+        setFlipperSide(!flipperSide);
+        setActiveTool("select");
+      } else if (activeTool === "kicker") {
+        addKicker(pos.x, pos.y);
+        setActiveTool("select");
+      } else if (activeTool === "laneGuide") {
+        addLaneGuide(pos.x, pos.y);
+        setActiveTool("select");
       } else if (activeTool === "ballSpawn") {
         setBallSpawn(pos.x, pos.y);
         setActiveTool("select");
       }
     },
-    [activeTool, level, flipperSide, getCanvasPos, setSelectedId, addWall, addBumper, addFlipper, setBallSpawn, setActiveTool]
+    [activeTool, level, flipperSide, getCanvasPos, setSelectedId, addWall, addBumper, addFlipper, addSling, addKicker, addLaneGuide, setBallSpawn, setActiveTool]
   );
 
   const handleMouseMove = useCallback(
