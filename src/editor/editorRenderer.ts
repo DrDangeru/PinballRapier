@@ -156,6 +156,44 @@ export function renderEditor(
     ctx.restore();
   }
 
+  // Card targets
+  for (const ct of level.cardTargets ?? []) {
+    const isSelected = ct.id === selectedId;
+    ctx.save();
+    ctx.translate(ct.cx, ct.cy);
+    ctx.rotate(ct.rotation ?? 0);
+    ctx.fillStyle = isSelected ? "#fef3c7" : "#1e293b";
+    ctx.fillRect(-34, -24, 68, 48);
+    ctx.strokeStyle = isSelected ? "#60a5fa" : "#475569";
+    ctx.lineWidth = isSelected ? 2 : 1;
+    ctx.strokeRect(-34, -24, 68, 48);
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "bold 16px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(ct.label, 0, 0);
+    ctx.restore();
+  }
+
+  // Icon targets
+  for (const it of level.iconTargets ?? []) {
+    const isSelected = it.id === selectedId;
+    ctx.save();
+    ctx.translate(it.cx, it.cy);
+    ctx.rotate(it.rotation ?? 0);
+    ctx.fillStyle = isSelected ? "#e9d5ff" : "#1e1b4b";
+    ctx.fillRect(-34, -24, 68, 48);
+    ctx.strokeStyle = isSelected ? "#60a5fa" : "#4c1d95";
+    ctx.lineWidth = isSelected ? 2 : 1;
+    ctx.strokeRect(-34, -24, 68, 48);
+    ctx.fillStyle = "#8b5cf6";
+    ctx.font = "16px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(it.label, 0, 0);
+    ctx.restore();
+  }
+
   // Ball spawn
   ctx.beginPath();
   ctx.arc(level.ballSpawn.x, level.ballSpawn.y, BALL_RADIUS_PX, 0, Math.PI * 2);
@@ -251,6 +289,16 @@ export function hitTest(
   // Check lane guides
   for (const lg of level.laneGuides ?? []) {
     if (Math.abs(x - lg.cx) < lg.hw + 4 && Math.abs(y - lg.cy) < lg.hh + 4) return lg.id;
+  }
+
+  // Check card targets
+  for (const ct of level.cardTargets ?? []) {
+    if (Math.abs(x - ct.cx) < 38 && Math.abs(y - ct.cy) < 28) return ct.id;
+  }
+
+  // Check icon targets
+  for (const it of level.iconTargets ?? []) {
+    if (Math.abs(x - it.cx) < 38 && Math.abs(y - it.cy) < 28) return it.id;
   }
 
   // Check walls

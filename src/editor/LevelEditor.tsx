@@ -40,8 +40,13 @@ export default function LevelEditor({ onPlay }: Props) {
     deleteElement,
     updateWall,
     updateBumper,
+    rotateElement,
     setLevelName,
     loadLevel,
+    loadLevelEntry,
+    levelEntries,
+    saveCurrent,
+    deleteLevelEntry,
     clearLevel,
   } = useEditorState();
 
@@ -92,8 +97,10 @@ export default function LevelEditor({ onPlay }: Props) {
           const sling = (level.slings ?? []).find((s) => s.id === id);
           const kicker = (level.kickers ?? []).find((k) => k.id === id);
           const lg = (level.laneGuides ?? []).find((l) => l.id === id);
-          const ecx = wall?.cx ?? bumper?.cx ?? flipper?.anchorX ?? sling?.cx ?? kicker?.cx ?? lg?.cx ?? pos.x;
-          const ecy = wall?.cy ?? bumper?.cy ?? flipper?.anchorY ?? sling?.cy ?? kicker?.cy ?? lg?.cy ?? pos.y;
+          const ct = (level.cardTargets ?? []).find((c) => c.id === id);
+          const it = (level.iconTargets ?? []).find((i) => i.id === id);
+          const ecx = wall?.cx ?? bumper?.cx ?? flipper?.anchorX ?? sling?.cx ?? kicker?.cx ?? lg?.cx ?? ct?.cx ?? it?.cx ?? pos.x;
+          const ecy = wall?.cy ?? bumper?.cy ?? flipper?.anchorY ?? sling?.cy ?? kicker?.cy ?? lg?.cy ?? ct?.cy ?? it?.cy ?? pos.y;
           setDragOffset({ x: pos.x - ecx, y: pos.y - ecy });
           setDragging(id);
         }
@@ -151,10 +158,24 @@ export default function LevelEditor({ onPlay }: Props) {
         setSelectedId(null);
         setActiveTool("select");
       }
+      // Rotate selected element: R = +10°, Shift+R = -10°
+      if ((e.key === "r" || e.key === "R") && selectedId) {
+        e.preventDefault();
+        const step = e.shiftKey ? -0.1745 : 0.1745; // ~10 degrees in radians
+        rotateElement(selectedId, step);
+      }
+      // Move selected element with arrow keys (5px steps, Shift = 1px)
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key) && selectedId) {
+        e.preventDefault();
+        const step = e.shiftKey ? 1 : 5;
+        const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+        const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+        moveElement(selectedId, dx, dy, true);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selectedId, deleteElement, setSelectedId, setActiveTool]);
+  }, [selectedId, deleteElement, setSelectedId, setActiveTool, rotateElement, moveElement]);
 
   // Export JSON
   const exportLevel = useCallback(() => {
@@ -218,7 +239,13 @@ export default function LevelEditor({ onPlay }: Props) {
 
         {/* Save / Load */}
         <div className="border-t border-gray-800 mt-2">
-          <SavedLevelsPanel currentLevel={level} onLoad={loadLevel} />
+          <SavedLevelsPanel
+            entries={levelEntries}
+            onLoad={loadLevelEntry}
+            onSave={saveCurrent}
+            onDelete={deleteLevelEntry}
+            currentLevelName={level.name}
+          />
         </div>
 
         {/* File I/O */}
@@ -287,7 +314,7 @@ export default function LevelEditor({ onPlay }: Props) {
         />
 
         <p className="text-gray-600 text-xs font-mono">
-          Click to place • Drag to move • DEL to delete • ESC to deselect
+          Click to place • Drag or Arrow keys to move (Shift=1px) • R / Shift+R to rotate 10° • DEL to delete • ESC to deselect
         </p>
       </div>
     </div>

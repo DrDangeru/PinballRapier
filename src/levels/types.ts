@@ -52,6 +52,7 @@ export interface CardTargetConfig {
   cx: number;
   cy: number;
   label: string; // e.g. "A♠", "A♥", "A♦", "A♣"
+  rotation?: number;
 }
 
 export interface IconTargetConfig {
@@ -59,6 +60,7 @@ export interface IconTargetConfig {
   cx: number;
   cy: number;
   label: string; // e.g. "Joker♠", "Joker♥", "Joker♦", "Joker♣"
+  rotation?: number;
 }
 
 export interface LevelConfig {

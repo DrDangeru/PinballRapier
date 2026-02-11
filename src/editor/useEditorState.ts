@@ -1,13 +1,63 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { LevelConfig, WallConfig, BumperConfig, FlipperConfig, SlingConfig, KickerConfig, LaneGuideConfig, ElementType } from "../levels/types";
 import { TABLE_WIDTH, WALL_THICKNESS, BUMPER_RADIUS_PX } from "../constants";
-import { defaultLevel } from "../levels/defaultLevel";
+import { listLevels, loadLevel as fetchLevelEntry, saveLevel, deleteLevel, LevelEntry } from "../levels/levelLoader";
 
 let nextId = 100;
 const uid = (prefix: string) => `${prefix}-${nextId++}`;
 
+const emptyLevel: LevelConfig = {
+  name: "Untitled",
+  ballSpawn: { x: TABLE_WIDTH / 2, y: 80 },
+  walls: [],
+  bumpers: [],
+  flippers: [],
+  slings: [],
+  kickers: [],
+  laneGuides: [],
+};
+
 export function useEditorState() {
-  const [level, setLevel] = useState<LevelConfig>(() => structuredClone(defaultLevel));
+  const [level, setLevel] = useState<LevelConfig>(emptyLevel);
+  const [currentFilename, setCurrentFilename] = useState<string>("Classic-1.json");
+  const [levelEntries, setLevelEntries] = useState<LevelEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load level list and default level on mount
+  useEffect(() => {
+    (async () => {
+      const entries = await listLevels();
+      setLevelEntries(entries);
+      const first = entries[0];
+      if (first) {
+        setCurrentFilename(first.filename);
+        const config = await fetchLevelEntry(first);
+        setLevel(structuredClone(config));
+      }
+      setLoading(false);
+    })();
+  }, []);
+
+  const refreshEntries = useCallback(async () => {
+    setLevelEntries(await listLevels());
+  }, []);
+
+  const loadLevelEntry = useCallback(async (entry: LevelEntry) => {
+    const config = await fetchLevelEntry(entry);
+    setLevel(structuredClone(config));
+    setCurrentFilename(entry.filename);
+    setSelectedId(null);
+  }, []);
+
+  const saveCurrent = useCallback(() => {
+    if (!level.name.trim()) return;
+    saveLevel(level, currentFilename);
+  }, [level, currentFilename]);
+
+  const deleteLevelEntry = useCallback(async (filename: string) => {
+    deleteLevel(filename);
+    await refreshEntries();
+  }, [refreshEntries]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ElementType | "select" | "ballSpawn">("select");
 
@@ -67,17 +117,21 @@ export function useEditorState() {
     setLevel((prev) => ({ ...prev, ballSpawn: { x, y } }));
   }, []);
 
-  const moveElement = useCallback((id: string, cx: number, cy: number) => {
+  const moveElement = useCallback((id: string, cx: number, cy: number, relative = false) => {
     setLevel((prev) => {
-      const walls = prev.walls.map((w) => (w.id === id ? { ...w, cx, cy } : w));
-      const bumpers = prev.bumpers.map((b) => (b.id === id ? { ...b, cx, cy } : b));
+      const mv = (ox: number, oy: number) => relative ? { cx: ox + cx, cy: oy + cy } : { cx, cy };
+      const mvF = (ox: number, oy: number) => relative ? { anchorX: ox + cx, anchorY: oy + cy } : { anchorX: cx, anchorY: cy };
+      const walls = prev.walls.map((w) => (w.id === id ? { ...w, ...mv(w.cx, w.cy) } : w));
+      const bumpers = prev.bumpers.map((b) => (b.id === id ? { ...b, ...mv(b.cx, b.cy) } : b));
       const flippers = prev.flippers.map((f) =>
-        f.id === id ? { ...f, anchorX: cx, anchorY: cy } : f
+        f.id === id ? { ...f, ...mvF(f.anchorX, f.anchorY) } : f
       );
-      const slings = (prev.slings ?? []).map((s) => (s.id === id ? { ...s, cx, cy } : s));
-      const kickers = (prev.kickers ?? []).map((k) => (k.id === id ? { ...k, cx, cy } : k));
-      const laneGuides = (prev.laneGuides ?? []).map((lg) => (lg.id === id ? { ...lg, cx, cy } : lg));
-      return { ...prev, walls, bumpers, flippers, slings, kickers, laneGuides };
+      const slings = (prev.slings ?? []).map((s) => (s.id === id ? { ...s, ...mv(s.cx, s.cy) } : s));
+      const kickers = (prev.kickers ?? []).map((k) => (k.id === id ? { ...k, ...mv(k.cx, k.cy) } : k));
+      const laneGuides = (prev.laneGuides ?? []).map((lg) => (lg.id === id ? { ...lg, ...mv(lg.cx, lg.cy) } : lg));
+      const cardTargets = (prev.cardTargets ?? []).map((ct) => (ct.id === id ? { ...ct, ...mv(ct.cx, ct.cy) } : ct));
+      const iconTargets = (prev.iconTargets ?? []).map((it) => (it.id === id ? { ...it, ...mv(it.cx, it.cy) } : it));
+      return { ...prev, walls, bumpers, flippers, slings, kickers, laneGuides, cardTargets, iconTargets };
     });
   }, []);
 
@@ -90,6 +144,8 @@ export function useEditorState() {
       slings: (prev.slings ?? []).filter((s) => s.id !== id),
       kickers: (prev.kickers ?? []).filter((k) => k.id !== id),
       laneGuides: (prev.laneGuides ?? []).filter((lg) => lg.id !== id),
+      cardTargets: (prev.cardTargets ?? []).filter((ct) => ct.id !== id),
+      iconTargets: (prev.iconTargets ?? []).filter((it) => it.id !== id),
     }));
     setSelectedId(null);
   }, []);
@@ -106,6 +162,20 @@ export function useEditorState() {
       ...prev,
       bumpers: prev.bumpers.map((b) => (b.id === id ? { ...b, ...updates } : b)),
     }));
+  }, []);
+
+  const rotateElement = useCallback((id: string, delta: number) => {
+    setLevel((prev) => {
+      const rot = (r?: number) => parseFloat(((r ?? 0) + delta).toFixed(3));
+      return {
+        ...prev,
+        walls: prev.walls.map((w) => (w.id === id ? { ...w, rotation: rot(w.rotation) } : w)),
+        slings: (prev.slings ?? []).map((s) => (s.id === id ? { ...s, rotation: rot(s.rotation) } : s)),
+        laneGuides: (prev.laneGuides ?? []).map((lg) => (lg.id === id ? { ...lg, rotation: rot(lg.rotation) } : lg)),
+        cardTargets: (prev.cardTargets ?? []).map((ct) => (ct.id === id ? { ...ct, rotation: rot(ct.rotation) } : ct)),
+        iconTargets: (prev.iconTargets ?? []).map((it) => (it.id === id ? { ...it, rotation: rot(it.rotation) } : it)),
+      };
+    });
   }, []);
 
   const setLevelName = useCallback((name: string) => {
@@ -133,6 +203,8 @@ export function useEditorState() {
 
   return {
     level,
+    levelEntries,
+    loading,
     selectedId,
     setSelectedId,
     activeTool,
@@ -148,8 +220,12 @@ export function useEditorState() {
     deleteElement,
     updateWall,
     updateBumper,
+    rotateElement,
     setLevelName,
     loadLevel,
+    loadLevelEntry,
+    saveCurrent,
+    deleteLevelEntry,
     clearLevel,
   };
 }

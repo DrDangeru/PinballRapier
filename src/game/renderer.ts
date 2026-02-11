@@ -21,33 +21,106 @@ export function render(
 ) {
   ctx.clearRect(0, 0, TABLE_WIDTH, TABLE_HEIGHT);
 
-  // Background
-  ctx.fillStyle = "#111827";
+  // Oak wood background
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, TABLE_HEIGHT);
+  bgGrad.addColorStop(0, "#8B6914");
+  bgGrad.addColorStop(0.3, "#A0782C");
+  bgGrad.addColorStop(0.5, "#7A5B10");
+  bgGrad.addColorStop(0.7, "#9E7624");
+  bgGrad.addColorStop(1, "#6B5010");
+  ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, TABLE_WIDTH, TABLE_HEIGHT);
 
-  // Draw walls (static colliders)
-  ctx.fillStyle = "#374151";
+  // Wood grain lines
+  ctx.globalAlpha = 0.12;
+  ctx.strokeStyle = "#3E2700";
+  ctx.lineWidth = 1;
+  for (let y = 8; y < TABLE_HEIGHT; y += 12) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    for (let x = 0; x < TABLE_WIDTH; x += 30) {
+      ctx.lineTo(x + 15, y + Math.sin(x * 0.05 + y * 0.02) * 2);
+    }
+    ctx.lineTo(TABLE_WIDTH, y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  // Oak perimeter border
+  const bw = 10;
+  const perimGrad = ctx.createLinearGradient(0, 0, TABLE_WIDTH, TABLE_HEIGHT);
+  perimGrad.addColorStop(0, "#5C3D0E");
+  perimGrad.addColorStop(0.25, "#7A5220");
+  perimGrad.addColorStop(0.5, "#8B6328");
+  perimGrad.addColorStop(0.75, "#6E4818");
+  perimGrad.addColorStop(1, "#4A3008");
+  ctx.strokeStyle = perimGrad;
+  ctx.lineWidth = bw;
+  ctx.strokeRect(bw / 2, bw / 2, TABLE_WIDTH - bw, TABLE_HEIGHT - bw);
+  // Inner bevel highlight
+  ctx.strokeStyle = "rgba(210,170,100,0.25)";
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(bw + 1, bw + 1, TABLE_WIDTH - bw * 2 - 2, TABLE_HEIGHT - bw * 2 - 2);
+  // Outer shadow
+  ctx.strokeStyle = "rgba(30,15,0,0.6)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(1, 1, TABLE_WIDTH - 2, TABLE_HEIGHT - 2);
+
+  // Collect bodies to skip in generic wall drawing
+  const skipBodies = new Set<number>();
+  for (const b of bodies.bumpers) skipBodies.add(b.handle);
+  for (const s of bodies.slings) skipBodies.add(s.handle);
+  for (const k of bodies.kickers) skipBodies.add(k.handle);
+  for (const lg of bodies.laneGuides) skipBodies.add(lg.handle);
+  for (const ct of bodies.cardTargets) skipBodies.add(ct.handle);
+  for (const it of bodies.iconTargets) skipBodies.add(it.handle);
+
+  // Draw walls (static colliders) — dark oak wood
   world.forEachCollider((collider) => {
     const parent = collider.parent();
     if (!parent || parent.bodyType() !== RAPIER.RigidBodyType.Fixed) return;
+    if (skipBodies.has(parent.handle)) return;
 
-    // Skip bumpers (drawn separately)
     const shape = collider.shape;
     if (shape.type === RAPIER.ShapeType.Ball) return;
 
     const pos = parent.translation();
     const rot = parent.rotation();
     const halfExtents = (shape as RAPIER.Cuboid).halfExtents;
+    const sx = toScreen(pos.x);
+    const sy = toScreen(pos.y);
+    const w2 = toScreen(halfExtents.x);
+    const h2 = toScreen(halfExtents.y);
 
     ctx.save();
-    ctx.translate(toScreen(pos.x), toScreen(pos.y));
+    ctx.translate(sx, sy);
     ctx.rotate(rot);
-    ctx.fillRect(
-      -toScreen(halfExtents.x),
-      -toScreen(halfExtents.y),
-      toScreen(halfExtents.x) * 2,
-      toScreen(halfExtents.y) * 2
-    );
+
+    // Dark oak fill
+    const wallGrad = ctx.createLinearGradient(-w2, -h2, w2, h2);
+    wallGrad.addColorStop(0, "#4A3008");
+    wallGrad.addColorStop(0.5, "#5C3D12");
+    wallGrad.addColorStop(1, "#3E2800");
+    ctx.fillStyle = wallGrad;
+    ctx.fillRect(-w2, -h2, w2 * 2, h2 * 2);
+
+    // Subtle wood grain on walls
+    ctx.globalAlpha = 0.15;
+    ctx.strokeStyle = "#2A1A00";
+    ctx.lineWidth = 0.5;
+    for (let gy = -h2 + 3; gy < h2; gy += 5) {
+      ctx.beginPath();
+      ctx.moveTo(-w2, gy);
+      ctx.lineTo(w2, gy + Math.sin(gy * 0.3) * 1);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // Edge highlight
+    ctx.strokeStyle = "rgba(180,130,60,0.3)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-w2, -h2, w2 * 2, h2 * 2);
+
     ctx.restore();
   });
 
@@ -156,16 +229,18 @@ export function render(
     // Card background
     ctx.save();
     ctx.translate(sx, sy);
+    const cRot = bodies.cardTargets[i].rotation();
+    ctx.rotate(cRot);
 
     // Glow when hit
     if (hit) {
       ctx.shadowColor = "#fbbf24";
-      ctx.shadowBlur = 12;
+      ctx.shadowBlur = 20;
     }
 
-    // Card shape
+    // Card shape (80% of original)
     ctx.beginPath();
-    ctx.roundRect(-14, -10, 28, 20, 3);
+    ctx.roundRect(-34, -24, 68, 48, 5);
     ctx.fillStyle = hit ? "#fef3c7" : "#1e293b";
     ctx.fill();
     ctx.strokeStyle = hit ? "#f59e0b" : "#475569";
@@ -174,7 +249,7 @@ export function render(
     ctx.shadowBlur = 0;
 
     // Card label
-    ctx.font = "bold 11px serif";
+    ctx.font = "bold 22px serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     // Color suits: red for hearts/diamonds, dark for spades/clubs
@@ -185,7 +260,7 @@ export function render(
     ctx.restore();
   }
 
-  // Draw icon targets (Jokers)
+  // Draw icon targets (Jokers) — same size as cards
   for (let i = 0; i < bodies.iconTargets.length; i++) {
     const it = bodies.iconTargets[i];
     const pos = it.translation();
@@ -196,34 +271,36 @@ export function render(
 
     ctx.save();
     ctx.translate(sx, sy);
+    const iRot = bodies.iconTargets[i].rotation();
+    ctx.rotate(iRot);
 
     if (hit) {
       ctx.shadowColor = "#a855f7";
-      ctx.shadowBlur = 14;
+      ctx.shadowBlur = 20;
     }
 
-    // Circle background
+    // Joker tile (same size as cards)
     ctx.beginPath();
-    ctx.arc(0, 0, 15, 0, Math.PI * 2);
+    ctx.roundRect(-34, -24, 68, 48, 5);
     ctx.fillStyle = hit ? "#e9d5ff" : "#1e1b4b";
     ctx.fill();
     ctx.strokeStyle = hit ? "#a855f7" : "#4c1d95";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.shadowBlur = 0;
 
     // Icon label
-    ctx.font = "18px serif";
+    ctx.font = "22px serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = hit ? "#7c3aed" : "#8b5cf6";
-    ctx.fillText(label, 0, 1);
+    ctx.fillText(label, 0, 0);
 
     // +1K flash when hit
     if (hit) {
-      ctx.font = "bold 9px monospace";
-      ctx.fillStyle = "#c4b5fd";
-      ctx.fillText("+1K", 0, -20);
+      ctx.font = "bold 12px monospace";
+      ctx.fillStyle = "#fbbf24";
+      ctx.fillText("+1K", 0, -30);
     }
 
     ctx.restore();
@@ -298,20 +375,17 @@ function drawFlipper(ctx: CanvasRenderingContext2D, flipper: RAPIER.RigidBody, i
   ctx.translate(toScreen(pos.x), toScreen(pos.y));
   ctx.rotate(rot);
 
-  // Tapered flipper shape: wide at pivot end, narrow at tip
   const hw = FLIPPER_WIDTH / 2;
   const baseH = FLIPPER_HEIGHT / 2;
   const tipH = FLIPPER_TIP_HEIGHT / 2;
 
   ctx.beginPath();
   if (isLeft) {
-    // Pivot on left, tip on right
     ctx.moveTo(-hw, -baseH);
     ctx.lineTo(hw, -tipH);
     ctx.lineTo(hw, tipH);
     ctx.lineTo(-hw, baseH);
   } else {
-    // Pivot on right, tip on left
     ctx.moveTo(hw, -baseH);
     ctx.lineTo(-hw, -tipH);
     ctx.lineTo(-hw, tipH);
@@ -319,21 +393,52 @@ function drawFlipper(ctx: CanvasRenderingContext2D, flipper: RAPIER.RigidBody, i
   }
   ctx.closePath();
 
-  const grad = ctx.createLinearGradient(-hw, 0, hw, 0);
-  grad.addColorStop(0, isLeft ? "#3b82f6" : "#2563eb");
-  grad.addColorStop(1, isLeft ? "#2563eb" : "#3b82f6");
+  // Marble base gradient
+  const grad = ctx.createLinearGradient(-hw, -baseH, hw, baseH);
+  grad.addColorStop(0, "#1e3a5f");
+  grad.addColorStop(0.2, "#2d5a8a");
+  grad.addColorStop(0.35, "#1a4570");
+  grad.addColorStop(0.5, "#3b7dc0");
+  grad.addColorStop(0.65, "#1e4d80");
+  grad.addColorStop(0.8, "#2a6399");
+  grad.addColorStop(1, "#163050");
   ctx.fillStyle = grad;
   ctx.fill();
 
-  ctx.strokeStyle = "#60a5fa";
+  // Marble veins
+  ctx.save();
+  ctx.clip();
+  ctx.strokeStyle = "rgba(180, 210, 240, 0.15)";
+  ctx.lineWidth = 0.8;
+  for (let v = 0; v < 5; v++) {
+    const yOff = -baseH + (v + 0.5) * (baseH * 2) / 5;
+    ctx.beginPath();
+    ctx.moveTo(-hw, yOff);
+    ctx.bezierCurveTo(-hw * 0.3, yOff - 3, hw * 0.3, yOff + 4, hw, yOff - 1);
+    ctx.stroke();
+  }
+  // Subtle white streaks
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-hw * 0.6, -baseH * 0.3);
+  ctx.bezierCurveTo(-hw * 0.1, -baseH * 0.5, hw * 0.3, baseH * 0.2, hw * 0.7, -baseH * 0.1);
+  ctx.stroke();
+  ctx.restore();
+
+  // Glossy edge
+  ctx.strokeStyle = "rgba(147, 197, 253, 0.5)";
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
   // Pivot dot
   const pivotX = isLeft ? -hw : hw;
   ctx.beginPath();
-  ctx.arc(pivotX, 0, 3, 0, Math.PI * 2);
-  ctx.fillStyle = "#93c5fd";
+  ctx.arc(pivotX, 0, 3.5, 0, Math.PI * 2);
+  const pivotGrad = ctx.createRadialGradient(pivotX, 0, 0, pivotX, 0, 3.5);
+  pivotGrad.addColorStop(0, "#e0e7ff");
+  pivotGrad.addColorStop(1, "#6366f1");
+  ctx.fillStyle = pivotGrad;
   ctx.fill();
 
   ctx.restore();

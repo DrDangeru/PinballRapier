@@ -23,7 +23,7 @@ function addWall(
     .setTranslation(px(cx), px(cy))
     .setRotation(rotation);
   const body = world.createRigidBody(bodyDesc);
-  const colliderDesc = RAPIER.ColliderDesc.cuboid(px(hw), px(hh)).setRestitution(0.3);
+  const colliderDesc = RAPIER.ColliderDesc.cuboid(px(hw), px(hh)).setRestitution(0.3).setFriction(0.0);
   world.createCollider(colliderDesc, body);
   return body;
 }
@@ -146,7 +146,7 @@ function addLaneGuide(
   world.createCollider(
     RAPIER.ColliderDesc.cuboid(px(hw), px(hh))
       .setRestitution(0.1)
-      .setFriction(0.5),
+      .setFriction(0.1),
     body
   );
   return body;
@@ -155,13 +155,15 @@ function addLaneGuide(
 function addCardTarget(
   world: RAPIER.World,
   cx: number,
-  cy: number
+  cy: number,
+  rotation = 0
 ) {
-  const bodyDesc = RAPIER.RigidBodyDesc.fixed().setTranslation(px(cx), px(cy));
+  const bodyDesc = RAPIER.RigidBodyDesc.fixed()
+    .setTranslation(px(cx), px(cy))
+    .setRotation(rotation);
   const body = world.createRigidBody(bodyDesc);
-  // Card target: small rectangular collider
   world.createCollider(
-    RAPIER.ColliderDesc.cuboid(px(14), px(10))
+    RAPIER.ColliderDesc.cuboid(px(34), px(24))
       .setRestitution(0.6),
     body
   );
@@ -171,13 +173,16 @@ function addCardTarget(
 function addIconTarget(
   world: RAPIER.World,
   cx: number,
-  cy: number
+  cy: number,
+  rotation = 0
 ) {
-  const bodyDesc = RAPIER.RigidBodyDesc.fixed().setTranslation(px(cx), px(cy));
+  const bodyDesc = RAPIER.RigidBodyDesc.fixed()
+    .setTranslation(px(cx), px(cy))
+    .setRotation(rotation);
   const body = world.createRigidBody(bodyDesc);
   world.createCollider(
-    RAPIER.ColliderDesc.ball(px(15))
-      .setRestitution(0.5),
+    RAPIER.ColliderDesc.cuboid(px(34), px(24))
+      .setRestitution(0.6),
     body
   );
   return body;
@@ -231,22 +236,23 @@ export function buildLevel(world: RAPIER.World, config: LevelConfig): GameBodies
   const ballDesc = RAPIER.RigidBodyDesc.dynamic()
     .setTranslation(px(config.ballSpawn.x), px(config.ballSpawn.y))
     .setCcdEnabled(true)
-    .setCanSleep(false);
+    .setCanSleep(false)
+    .setLinearDamping(0.0);
   const ball = world.createRigidBody(ballDesc);
   const ballCollider = RAPIER.ColliderDesc.ball(BALL_RADIUS)
     .setRestitution(0.5)
     .setDensity(1.0)
-    .setFriction(0.15);
+    .setFriction(0.03);
   world.createCollider(ballCollider, ball);
 
   // Card targets
   const cardTargets = (config.cardTargets ?? []).map((ct) =>
-    addCardTarget(world, ct.cx, ct.cy)
+    addCardTarget(world, ct.cx, ct.cy, ct.rotation ?? 0)
   );
 
   // Icon targets
   const iconTargets = (config.iconTargets ?? []).map((it) =>
-    addIconTarget(world, it.cx, it.cy)
+    addIconTarget(world, it.cx, it.cy, it.rotation ?? 0)
   );
 
   return {

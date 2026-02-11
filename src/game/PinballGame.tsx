@@ -47,16 +47,36 @@ export default function PinballGame({ level, onBack }: Props) {
 
     const lAngle = bodies.leftFlipper.rotation();
     if (leftPressed) {
-      bodies.leftFlipper.setAngvel(lAngle > L_MIN ? -FLIP_SPEED : 0, true);
+      if (lAngle > L_MIN) {
+        bodies.leftFlipper.setAngvel(-FLIP_SPEED, true);
+      } else {
+        bodies.leftFlipper.setAngvel(0, true);
+        bodies.leftFlipper.setRotation(L_MIN, true);
+      }
     } else {
-      bodies.leftFlipper.setAngvel(lAngle < L_MAX ? FLIP_SPEED : 0, true);
+      if (lAngle < L_MAX) {
+        bodies.leftFlipper.setAngvel(FLIP_SPEED, true);
+      } else {
+        bodies.leftFlipper.setAngvel(0, true);
+        bodies.leftFlipper.setRotation(L_MAX, true);
+      }
     }
 
     const rAngle = bodies.rightFlipper.rotation();
     if (rightPressed) {
-      bodies.rightFlipper.setAngvel(rAngle < R_MAX ? FLIP_SPEED : 0, true);
+      if (rAngle < R_MAX) {
+        bodies.rightFlipper.setAngvel(FLIP_SPEED, true);
+      } else {
+        bodies.rightFlipper.setAngvel(0, true);
+        bodies.rightFlipper.setRotation(R_MAX, true);
+      }
     } else {
-      bodies.rightFlipper.setAngvel(rAngle > R_MIN ? -FLIP_SPEED : 0, true);
+      if (rAngle > R_MIN) {
+        bodies.rightFlipper.setAngvel(-FLIP_SPEED, true);
+      } else {
+        bodies.rightFlipper.setAngvel(0, true);
+        bodies.rightFlipper.setRotation(R_MIN, true);
+      }
     }
 
     // Step physics
@@ -96,7 +116,7 @@ export default function PinballGame({ level, onBack }: Props) {
       const cPos = ct.translation();
       const dx = ballPos.x - cPos.x;
       const dy = ballPos.y - cPos.y;
-      if (dx * dx + dy * dy < px(22) * px(22)) {
+      if (dx * dx + dy * dy < px(50) * px(50)) {
         const vel = bodies.ball.linvel();
         if (vel.x * vel.x + vel.y * vel.y > 1.5) {
           bodies.cardHitState[i] = true;
@@ -114,21 +134,24 @@ export default function PinballGame({ level, onBack }: Props) {
       }
     }
 
-    // Icon target hits (1000 pts each, one-time)
+    // Icon target hits (1000 pts each, reset when all hit)
     for (let i = 0; i < bodies.iconTargets.length; i++) {
       if (bodies.iconHitState[i]) continue;
       const it = bodies.iconTargets[i];
       const iPos = it.translation();
       const dix = ballPos.x - iPos.x;
       const diy = ballPos.y - iPos.y;
-      if (dix * dix + diy * diy < px(22) * px(22)) {
-        const vel = bodies.ball.linvel();
-        if (vel.x * vel.x + vel.y * vel.y > 1.5) {
-          bodies.iconHitState[i] = true;
-          scoreRef.current += 1000;
-          setScore(scoreRef.current);
-        }
+      const distSq = dix * dix + diy * diy;
+      const hitRadSq = px(50) * px(50);
+      if (distSq < hitRadSq) {
+        bodies.iconHitState[i] = true;
+        scoreRef.current += 1000;
+        setScore(scoreRef.current);
       }
+    }
+    // Reset jokers when all are hit
+    if (bodies.iconHitState.length > 0 && bodies.iconHitState.every(Boolean)) {
+      bodies.iconHitState.fill(false);
     }
 
     // Tick jackpot animation
