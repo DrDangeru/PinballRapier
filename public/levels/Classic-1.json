@@ -1,62 +1,309 @@
 {
-  "name": "Classic",
-  "ballSpawn": { "x": 590, "y": 700 },
+  "name": "Classic-1",
+  "ballSpawn": {
+    "x": 590,
+    "y": 700
+  },
   "walls": [
-    { "id": "wall-left", "cx": 5, "cy": 420, "hw": 5, "hh": 420 },
-    { "id": "wall-right", "cx": 615, "cy": 420, "hw": 5, "hh": 420 },
-    { "id": "wall-top", "cx": 310, "cy": 5, "hw": 310, "hh": 5 },
-    { "id": "wall-bl", "cx": 124, "cy": 835, "hw": 124, "hh": 5 },
-    { "id": "wall-br", "cx": 496, "cy": 835, "hw": 124, "hh": 5 },
-    { "id": "plunger-wall", "cx": 570, "cy": 420, "hw": 3, "hh": 319.2 },
-    { "id": "plunger-top", "cx": 580, "cy": 84, "hw": 25, "hh": 4, "rotation": 0.6 },
-    { "id": "guide-l", "cx": 136.4, "cy": 710, "hw": 60, "hh": 4, "rotation": -0.45 },
-    { "id": "guide-r", "cx": 483.6, "cy": 710, "hw": 60, "hh": 4, "rotation": 0.45 },
-    { "id": "outlane-l", "cx": 30, "cy": 775, "hw": 3, "hh": 40 },
-    { "id": "outlane-r", "cx": 565, "cy": 775, "hw": 3, "hh": 40 },
-    { "id": "arch-l", "cx": 100, "cy": 117.6, "hw": 50, "hh": 4, "rotation": -0.7 },
-    { "id": "arch-r", "cx": 500, "cy": 117.6, "hw": 50, "hh": 4, "rotation": 0.7 },
-    { "id": "drop-1", "cx": 155, "cy": 302.4, "hw": 20, "hh": 3 },
-    { "id": "drop-2", "cx": 260.4, "cy": 302.4, "hw": 20, "hh": 3 },
-    { "id": "drop-3", "cx": 359.6, "cy": 302.4, "hw": 20, "hh": 3 },
-    { "id": "drop-4", "cx": 465, "cy": 302.4, "hw": 20, "hh": 3 }
+    {
+      "id": "wall-left",
+      "cx": 5,
+      "cy": 420,
+      "hw": 5,
+      "hh": 420
+    },
+    {
+      "id": "wall-right",
+      "cx": 615,
+      "cy": 420,
+      "hw": 5,
+      "hh": 420
+    },
+    {
+      "id": "wall-top",
+      "cx": 310,
+      "cy": 5,
+      "hw": 310,
+      "hh": 5
+    },
+    {
+      "id": "wall-bl",
+      "cx": 124,
+      "cy": 835,
+      "hw": 124,
+      "hh": 5
+    },
+    {
+      "id": "wall-br",
+      "cx": 496,
+      "cy": 835,
+      "hw": 124,
+      "hh": 5
+    },
+    {
+      "id": "plunger-wall",
+      "cx": 570,
+      "cy": 420,
+      "hw": 3,
+      "hh": 319.2
+    },
+    {
+      "id": "plunger-top",
+      "cx": 594,
+      "cy": 64,
+      "hw": 25,
+      "hh": 4,
+      "rotation": 0.6
+    },
+    {
+      "id": "guide-l",
+      "cx": 136.4,
+      "cy": 710,
+      "hw": 60,
+      "hh": 4,
+      "rotation": -0.45
+    },
+    {
+      "id": "guide-r",
+      "cx": 476.6,
+      "cy": 720,
+      "hw": 60,
+      "hh": 4,
+      "rotation": 0.45
+    },
+    {
+      "id": "outlane-l",
+      "cx": 60,
+      "cy": 741,
+      "hw": 3,
+      "hh": 40
+    },
+    {
+      "id": "outlane-r",
+      "cx": 570,
+      "cy": 783,
+      "hw": 3,
+      "hh": 40
+    },
+    {
+      "id": "arch-l",
+      "cx": 83,
+      "cy": 173.6,
+      "hw": 33,
+      "hh": 4,
+      "rotation": -0.7
+    },
+    {
+      "id": "arch-r",
+      "cx": 491,
+      "cy": 117.6,
+      "hw": 35,
+      "hh": 4,
+      "rotation": 0.7
+    },
+    {
+      "id": "drop-1",
+      "cx": 155,
+      "cy": 302.4,
+      "hw": 20,
+      "hh": 3
+    },
+    {
+      "id": "drop-2",
+      "cx": 299,
+      "cy": 633.4,
+      "hw": 42,
+      "hh": 3
+    },
+    {
+      "id": "drop-3",
+      "cx": 359.6,
+      "cy": 302.4,
+      "hw": 20,
+      "hh": 3
+    },
+    {
+      "id": "drop-4",
+      "cx": 465,
+      "cy": 302.4,
+      "hw": 20,
+      "hh": 3
+    }
   ],
   "bumpers": [
-    { "id": "bump-1", "cx": 186, "cy": 151.2, "radius": 24, "restitution": 1.6 },
-    { "id": "bump-2", "cx": 310, "cy": 117.6, "radius": 24, "restitution": 1.6 },
-    { "id": "bump-3", "cx": 434, "cy": 151.2, "radius": 24, "restitution": 1.6 },
-    { "id": "bump-4", "cx": 248, "cy": 210, "radius": 20, "restitution": 1.8 },
-    { "id": "bump-5", "cx": 372, "cy": 210, "radius": 20, "restitution": 1.8 },
-    { "id": "bump-6", "cx": 124, "cy": 369.6, "radius": 18, "restitution": 1.4 },
-    { "id": "bump-7", "cx": 496, "cy": 369.6, "radius": 18, "restitution": 1.4 }
+    {
+      "id": "bump-1",
+      "cx": 186,
+      "cy": 151.2,
+      "radius": 24,
+      "restitution": 1.6
+    },
+    {
+      "id": "bump-2",
+      "cx": 310,
+      "cy": 117.6,
+      "radius": 24,
+      "restitution": 1.6
+    },
+    {
+      "id": "bump-3",
+      "cx": 434,
+      "cy": 151.2,
+      "radius": 24,
+      "restitution": 1.6
+    },
+    {
+      "id": "bump-4",
+      "cx": 248,
+      "cy": 210,
+      "radius": 20,
+      "restitution": 1.8
+    },
+    {
+      "id": "bump-5",
+      "cx": 372,
+      "cy": 210,
+      "radius": 20,
+      "restitution": 1.8
+    },
+    {
+      "id": "bump-7",
+      "cx": 496,
+      "cy": 369.6,
+      "radius": 18,
+      "restitution": 1.4
+    }
   ],
   "flippers": [
-    { "id": "flip-l", "anchorX": 198.4, "anchorY": 775, "isLeft": true },
-    { "id": "flip-r", "anchorX": 396.8, "anchorY": 775, "isLeft": false }
+    {
+      "id": "flip-l",
+      "anchorX": 198.4,
+      "anchorY": 775,
+      "isLeft": true
+    },
+    {
+      "id": "flip-r",
+      "anchorX": 396.8,
+      "anchorY": 775,
+      "isLeft": false
+    }
   ],
   "slings": [
-    { "id": "sling-l", "cx": 93, "cy": 650, "rotation": -0.5, "isLeft": true },
-    { "id": "sling-r", "cx": 465, "cy": 650, "rotation": 0.5, "isLeft": false }
+    {
+      "id": "sling-l",
+      "cx": 93,
+      "cy": 650,
+      "rotation": -0.5,
+      "isLeft": true
+    },
+    {
+      "id": "sling-r",
+      "cx": 465,
+      "cy": 650,
+      "rotation": 0.5,
+      "isLeft": false
+    }
   ],
   "kickers": [
-    { "id": "kick-1", "cx": 62, "cy": 252, "radius": 12 },
-    { "id": "kick-2", "cx": 558, "cy": 252, "radius": 12 }
+    {
+      "id": "kick-1",
+      "cx": 62,
+      "cy": 252,
+      "radius": 12
+    },
+    {
+      "id": "kick-2",
+      "cx": 558,
+      "cy": 252,
+      "radius": 12
+    }
   ],
   "laneGuides": [
-    { "id": "lane-1", "cx": 155, "cy": 58.8, "hw": 2, "hh": 30 },
-    { "id": "lane-2", "cx": 248, "cy": 58.8, "hw": 2, "hh": 30 },
-    { "id": "lane-3", "cx": 341, "cy": 58.8, "hw": 2, "hh": 30 },
-    { "id": "lane-4", "cx": 434, "cy": 58.8, "hw": 2, "hh": 30 },
-    { "id": "lane-5", "cx": 74.4, "cy": 462, "hw": 2, "hh": 35, "rotation": -0.15 },
-    { "id": "lane-6", "cx": 545.6, "cy": 462, "hw": 2, "hh": 35, "rotation": 0.15 }
+    {
+      "id": "lane-2",
+      "cx": 218,
+      "cy": 49.8,
+      "hw": 2,
+      "hh": 30
+    },
+    {
+      "id": "lane-3",
+      "cx": 387,
+      "cy": 50.8,
+      "hw": 2,
+      "hh": 30
+    },
+    {
+      "id": "lane-100",
+      "cx": 530,
+      "cy": 708,
+      "hw": 2,
+      "hh": 25,
+      "rotation": 6.282
+    }
   ],
   "cardTargets": [
-    { "id": "card-1", "cx": 111.6, "cy": 352.8, "label": "A♠", "rotation": -0.785 },
-    { "id": "card-2", "cx": 235.6, "cy": 352.8, "label": "A♥", "rotation": 0.785 },
-    { "id": "card-3", "cx": 359.6, "cy": 352.8, "label": "A♦", "rotation": -0.785 },
-    { "id": "card-4", "cx": 483.6, "cy": 352.8, "label": "A♣", "rotation": 0.785 }
+    {
+      "id": "card-1",
+      "cx": 111.6,
+      "cy": 352.8,
+      "label": "A♠",
+      "rotation": -0.785
+    },
+    {
+      "id": "card-2",
+      "cx": 187.6,
+      "cy": 356.8,
+      "label": "A♥",
+      "rotation": 5.5
+    },
+    {
+      "id": "card-3",
+      "cx": 106.60000000000002,
+      "cy": 430.8,
+      "label": "A♦",
+      "rotation": -0.785
+    },
+    {
+      "id": "card-4",
+      "cx": 359.6,
+      "cy": 354.8,
+      "label": "A♣",
+      "rotation": 5.5
+    }
   ],
   "iconTargets": [
-    { "id": "icon-1", "cx": 217, "cy": 470.4, "label": "🃏", "rotation": 0.785 },
-    { "id": "icon-2", "cx": 403, "cy": 470.4, "label": "🃏", "rotation": -0.785 }
+    {
+      "id": "icon-1",
+      "cx": 490,
+      "cy": 538.4,
+      "label": "🃏",
+      "rotation": 0.785
+    },
+    {
+      "id": "icon-2",
+      "cx": 405,
+      "cy": 511.4,
+      "label": "🃏",
+      "rotation": -0.785
+    }
+  ],
+  "trampolines": [
+    {
+      "id": "tramp-100",
+      "cx": 51,
+      "cy": 823,
+      "hw": 40,
+      "hh": 6,
+      "restitution": 3
+    },
+    {
+      "id": "tramp-101",
+      "cx": 526,
+      "cy": 823,
+      "hw": 40,
+      "hh": 6,
+      "restitution": 3
+    }
   ]
 }

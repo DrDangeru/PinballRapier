@@ -24,6 +24,10 @@ export default function PinballGame({ level, onBack }: Props) {
   const keysRef = useRef<Set<string>>(new Set());
   const [_score, setScore] = useState(0);
   const scoreRef = useRef(0);
+  const [lives, setLives] = useState(3);
+  const livesRef = useRef(3);
+  const [gameOver, setGameOver] = useState(false);
+  const gameOverRef = useRef(false);
   const animRef = useRef<number>(0);
 
   const gameLoop = useCallback(() => {
@@ -85,8 +89,17 @@ export default function PinballGame({ level, onBack }: Props) {
     // Check if ball fell through drain
     const ballPos = bodies.ball.translation();
     if (ballPos.y > px(TABLE_HEIGHT + 50)) {
+      livesRef.current -= 1;
+      setLives(livesRef.current);
+      if (livesRef.current <= 0) {
+        gameOverRef.current = true;
+        setGameOver(true);
+        return; // stop the loop
+      }
       resetBall(bodies.ball, TABLE_WIDTH);
     }
+
+    if (gameOverRef.current) return;
 
     // Proximity-based scoring helper
     const checkHit = (body: RAPIER.RigidBody, hitDist: number, points: number) => {
@@ -193,9 +206,10 @@ export default function PinballGame({ level, onBack }: Props) {
       if (e.key === " " && bodiesRef.current) {
         e.preventDefault();
         const ball = bodiesRef.current.ball;
+        const sideKick = (Math.random() - 0.5) * 1.2;
         ball.applyImpulse(
           new RAPIER.Vector2(
-            (Math.random() - 0.5) * 0.15,
+            sideKick,
             -PLUNGER_FORCE / 37.5
           ),
           true
@@ -236,6 +250,13 @@ export default function PinballGame({ level, onBack }: Props) {
         <h1 className="text-2xl font-bold text-white font-mono tracking-widest">
           {level.name}
         </h1>
+        <div className="flex gap-1 text-lg">
+          {Array.from({ length: 3 }, (_, i) => (
+            <span key={i} className={i < lives ? "text-red-500" : "text-gray-700"}>
+              ♥
+            </span>
+          ))}
+        </div>
       </div>
       <canvas
         ref={canvasRef}
@@ -246,6 +267,45 @@ export default function PinballGame({ level, onBack }: Props) {
       <p className="text-gray-500 text-sm font-mono">
         Press SPACE to launch • Arrow keys for flippers
       </p>
+
+      {/* Game Over overlay */}
+      {gameOver && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-10 text-center flex flex-col gap-4 shadow-2xl">
+            <h2 className="text-4xl font-bold text-red-500 font-mono tracking-widest">GAME OVER</h2>
+            <p className="text-2xl text-yellow-400 font-mono">Score: {_score.toLocaleString()}</p>
+            <div className="flex gap-3 justify-center mt-4">
+              <button
+                onClick={() => {
+                  scoreRef.current = 0;
+                  setScore(0);
+                  livesRef.current = 3;
+                  setLives(3);
+                  gameOverRef.current = false;
+                  setGameOver(false);
+                  if (bodiesRef.current) {
+                    resetBall(bodiesRef.current.ball, TABLE_WIDTH);
+                    bodiesRef.current.cardHitState.fill(false);
+                    bodiesRef.current.iconHitState.fill(false);
+                    bodiesRef.current.jackpotTriggered = false;
+                    bodiesRef.current.jackpotTimer = 0;
+                  }
+                  animRef.current = requestAnimationFrame(gameLoop);
+                }}
+                className="bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-2 rounded-lg text-sm font-mono"
+              >
+                Play Again
+              </button>
+              <button
+                onClick={onBack}
+                className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg text-sm font-mono"
+              >
+                Editor
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

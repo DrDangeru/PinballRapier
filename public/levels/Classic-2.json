@@ -1,0 +1,61 @@
+{
+  "name": "Classic-2",
+  "ballSpawn": { "x": 590, "y": 700 },
+  "walls": [
+    { "id": "wall-left", "cx": 5, "cy": 420, "hw": 5, "hh": 420 },
+    { "id": "wall-right", "cx": 615, "cy": 420, "hw": 5, "hh": 420 },
+    { "id": "wall-top", "cx": 310, "cy": 5, "hw": 310, "hh": 5 },
+    { "id": "wall-bl", "cx": 124, "cy": 835, "hw": 124, "hh": 5 },
+    { "id": "wall-br", "cx": 496, "cy": 835, "hw": 124, "hh": 5 },
+    { "id": "plunger-wall", "cx": 570, "cy": 420, "hw": 3, "hh": 319 },
+    { "id": "plunger-top", "cx": 594, "cy": 64, "hw": 25, "hh": 4, "rotation": 0.6 },
+    { "id": "guide-l", "cx": 136, "cy": 710, "hw": 60, "hh": 4, "rotation": -0.45 },
+    { "id": "guide-r", "cx": 477, "cy": 720, "hw": 60, "hh": 4, "rotation": 0.45 },
+    { "id": "outlane-l", "cx": 60, "cy": 741, "hw": 3, "hh": 40 },
+    { "id": "outlane-r", "cx": 570, "cy": 783, "hw": 3, "hh": 40 },
+    { "id": "arch-l", "cx": 100, "cy": 160, "hw": 40, "hh": 4, "rotation": -0.6 },
+    { "id": "arch-r", "cx": 480, "cy": 160, "hw": 40, "hh": 4, "rotation": 0.6 },
+    { "id": "mid-wall-l", "cx": 150, "cy": 450, "hw": 50, "hh": 4, "rotation": -0.3 },
+    { "id": "mid-wall-r", "cx": 450, "cy": 450, "hw": 50, "hh": 4, "rotation": 0.3 },
+    { "id": "drop-1", "cx": 200, "cy": 320, "hw": 22, "hh": 3 },
+    { "id": "drop-2", "cx": 310, "cy": 320, "hw": 22, "hh": 3 },
+    { "id": "drop-3", "cx": 420, "cy": 320, "hw": 22, "hh": 3 }
+  ],
+  "bumpers": [
+    { "id": "bump-1", "cx": 200, "cy": 180, "radius": 26, "restitution": 1.8 },
+    { "id": "bump-2", "cx": 310, "cy": 140, "radius": 26, "restitution": 1.8 },
+    { "id": "bump-3", "cx": 420, "cy": 180, "radius": 26, "restitution": 1.8 },
+    { "id": "bump-4", "cx": 260, "cy": 250, "radius": 22, "restitution": 2.0 },
+    { "id": "bump-5", "cx": 360, "cy": 250, "radius": 22, "restitution": 2.0 },
+    { "id": "bump-6", "cx": 310, "cy": 500, "radius": 20, "restitution": 1.6 }
+  ],
+  "flippers": [
+    { "id": "flip-l", "anchorX": 198, "anchorY": 775, "isLeft": true },
+    { "id": "flip-r", "anchorX": 397, "anchorY": 775, "isLeft": false }
+  ],
+  "slings": [
+    { "id": "sling-l", "cx": 93, "cy": 650, "rotation": -0.5, "isLeft": true },
+    { "id": "sling-r", "cx": 465, "cy": 650, "rotation": 0.5, "isLeft": false }
+  ],
+  "kickers": [
+    { "id": "kick-1", "cx": 62, "cy": 280, "radius": 12 },
+    { "id": "kick-2", "cx": 558, "cy": 280, "radius": 12 }
+  ],
+  "laneGuides": [
+    { "id": "lane-1", "cx": 180, "cy": 55, "hw": 2, "hh": 30 },
+    { "id": "lane-2", "cx": 280, "cy": 55, "hw": 2, "hh": 30 },
+    { "id": "lane-3", "cx": 380, "cy": 55, "hw": 2, "hh": 30 },
+    { "id": "lane-4", "cx": 460, "cy": 55, "hw": 2, "hh": 30 }
+  ],
+  "cardTargets": [
+    { "id": "card-1", "cx": 130, "cy": 380, "label": "K♠", "rotation": -0.5 },
+    { "id": "card-2", "cx": 230, "cy": 400, "label": "K♥", "rotation": 0.5 },
+    { "id": "card-3", "cx": 390, "cy": 400, "label": "K♦", "rotation": -0.5 },
+    { "id": "card-4", "cx": 490, "cy": 380, "label": "K♣", "rotation": 0.5 }
+  ],
+  "iconTargets": [
+    { "id": "icon-1", "cx": 310, "cy": 420, "label": "🃏", "rotation": 0 },
+    { "id": "icon-2", "cx": 200, "cy": 550, "label": "🃏", "rotation": -0.785 },
+    { "id": "icon-3", "cx": 420, "cy": 550, "label": "🃏", "rotation": 0.785 }
+  ]
+}

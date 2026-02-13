@@ -27,6 +27,7 @@ export interface GameBodies {
   iconHitState: boolean[];
   jackpotTriggered: boolean;
   jackpotTimer: number;
+  trampolines: RAPIER.RigidBody[];
 }
 
 function addWall(
@@ -179,6 +180,7 @@ export function setupTable(world: RAPIER.World): GameBodies {
     jackpotTimer: 0,
     iconTargets: [],
     iconHitState: [],
+    trampolines: [],
     
   };
 }

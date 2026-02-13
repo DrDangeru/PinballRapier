@@ -74,6 +74,7 @@ export function render(
   for (const lg of bodies.laneGuides) skipBodies.add(lg.handle);
   for (const ct of bodies.cardTargets) skipBodies.add(ct.handle);
   for (const it of bodies.iconTargets) skipBodies.add(it.handle);
+  for (const t of bodies.trampolines) skipBodies.add(t.handle);
 
   // Draw walls (static colliders) — dark oak wood
   world.forEachCollider((collider) => {
@@ -186,6 +187,50 @@ export function render(
       ctx.lineWidth = 1;
       ctx.strokeRect(-toScreen(he.x), -toScreen(he.y), toScreen(he.x) * 2, toScreen(he.y) * 2);
     }
+    ctx.restore();
+  }
+
+  // Draw trampolines
+  for (const tramp of bodies.trampolines) {
+    const pos = tramp.translation();
+    const rot = tramp.rotation();
+    const col = tramp.collider(0);
+    if (!col) continue;
+    const he = (col.shape as RAPIER.Cuboid).halfExtents;
+    const tw = toScreen(he.x);
+    const th = toScreen(he.y);
+    const tx = toScreen(pos.x);
+    const ty = toScreen(pos.y);
+
+    ctx.save();
+    ctx.translate(tx, ty);
+    ctx.rotate(rot);
+
+    // Green spring bar
+    const tGrad = ctx.createLinearGradient(-tw, -th, tw, th);
+    tGrad.addColorStop(0, "#16a34a");
+    tGrad.addColorStop(0.5, "#4ade80");
+    tGrad.addColorStop(1, "#16a34a");
+    ctx.fillStyle = tGrad;
+    ctx.fillRect(-tw, -th, tw * 2, th * 2);
+
+    // Spring coil lines
+    ctx.strokeStyle = "#15803d";
+    ctx.lineWidth = 1.5;
+    const coils = 5;
+    for (let i = 1; i < coils; i++) {
+      const lx = -tw + (tw * 2 * i) / coils;
+      ctx.beginPath();
+      ctx.moveTo(lx, -th);
+      ctx.lineTo(lx, th);
+      ctx.stroke();
+    }
+
+    // Edge glow
+    ctx.strokeStyle = "rgba(134, 239, 172, 0.5)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-tw, -th, tw * 2, th * 2);
+
     ctx.restore();
   }
 

@@ -4,7 +4,9 @@ import { useEditorState } from "./useEditorState";
 import { renderEditor, hitTest } from "./editorRenderer";
 import PropertiesPanel from "./PropertiesPanel";
 import SavedLevelsPanel from "./SavedLevelsPanel";
+import { useToast } from "./useToast";
 import { LevelConfig, ElementType } from "../levels/types";
+import { LevelEntry } from "../levels/levelLoader";
 
 interface Props {
   onPlay: (level: LevelConfig) => void;
@@ -18,6 +20,7 @@ const tools: { key: ElementType | "select" | "ballSpawn"; label: string; icon: s
   { key: "sling", label: "Slingshot", icon: "⟋" },
   { key: "kicker", label: "Kicker", icon: "◉" },
   { key: "laneGuide", label: "Lane Guide", icon: "│" },
+  { key: "trampoline", label: "Trampoline", icon: "≡" },
   { key: "ballSpawn", label: "Ball Spawn", icon: "◎" },
 ];
 
@@ -35,6 +38,7 @@ export default function LevelEditor({ onPlay }: Props) {
     addSling,
     addKicker,
     addLaneGuide,
+    addTrampoline,
     setBallSpawn,
     moveElement,
     deleteElement,
@@ -46,9 +50,29 @@ export default function LevelEditor({ onPlay }: Props) {
     loadLevelEntry,
     levelEntries,
     saveCurrent,
-    deleteLevelEntry,
+    reloadCurrent,
     clearLevel,
   } = useEditorState();
+
+  const { toast, show: showToast } = useToast();
+
+  const handleSave = useCallback(async () => {
+    showToast(`Saving ${level.name}...`, "info");
+    await saveCurrent();
+    showToast(`Saved "${level.name}"`, "success");
+  }, [saveCurrent, level.name, showToast]);
+
+  const handleLoad = useCallback(async (entry: LevelEntry) => {
+    showToast(`Loading ${entry.name}...`, "info");
+    await loadLevelEntry(entry);
+    showToast(`Loaded "${entry.name}"`, "success");
+  }, [loadLevelEntry, showToast]);
+
+  const handleReload = useCallback(async () => {
+    showToast("Reloading from file...", "info");
+    await reloadCurrent();
+    showToast(`Reloaded "${level.name}"`, "success");
+  }, [reloadCurrent, level.name, showToast]);
 
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -99,8 +123,11 @@ export default function LevelEditor({ onPlay }: Props) {
           const lg = (level.laneGuides ?? []).find((l) => l.id === id);
           const ct = (level.cardTargets ?? []).find((c) => c.id === id);
           const it = (level.iconTargets ?? []).find((i) => i.id === id);
-          const ecx = wall?.cx ?? bumper?.cx ?? flipper?.anchorX ?? sling?.cx ?? kicker?.cx ?? lg?.cx ?? ct?.cx ?? it?.cx ?? pos.x;
-          const ecy = wall?.cy ?? bumper?.cy ?? flipper?.anchorY ?? sling?.cy ?? kicker?.cy ?? lg?.cy ?? ct?.cy ?? it?.cy ?? pos.y;
+          const tramp = (level.trampolines ?? []).find((t) => t.id === id);
+          const ecx = wall?.cx ?? bumper?.cx ?? flipper?.anchorX ?? sling?.cx ?? kicker?.cx
+           ?? lg?.cx ?? ct?.cx ?? it?.cx ?? tramp?.cx ?? pos.x;
+          const ecy = wall?.cy ?? bumper?.cy ?? flipper?.anchorY ?? sling?.cy ?? kicker?.cy
+           ?? lg?.cy ?? ct?.cy ?? it?.cy ?? tramp?.cy ?? pos.y;
           setDragOffset({ x: pos.x - ecx, y: pos.y - ecy });
           setDragging(id);
         }
@@ -124,12 +151,16 @@ export default function LevelEditor({ onPlay }: Props) {
       } else if (activeTool === "laneGuide") {
         addLaneGuide(pos.x, pos.y);
         setActiveTool("select");
+      } else if (activeTool === "trampoline") {
+        addTrampoline(pos.x, pos.y);
+        setActiveTool("select");
       } else if (activeTool === "ballSpawn") {
         setBallSpawn(pos.x, pos.y);
         setActiveTool("select");
       }
     },
-    [activeTool, level, flipperSide, getCanvasPos, setSelectedId, addWall, addBumper, addFlipper, addSling, addKicker, addLaneGuide, setBallSpawn, setActiveTool]
+    [activeTool, level, flipperSide, getCanvasPos, setSelectedId, addWall, addBumper, addFlipper, addSling, 
+      addKicker, addLaneGuide, addTrampoline, setBallSpawn, setActiveTool]
   );
 
   const handleMouseMove = useCallback(
@@ -241,9 +272,9 @@ export default function LevelEditor({ onPlay }: Props) {
         <div className="border-t border-gray-800 mt-2">
           <SavedLevelsPanel
             entries={levelEntries}
-            onLoad={loadLevelEntry}
-            onSave={saveCurrent}
-            onDelete={deleteLevelEntry}
+            onLoad={handleLoad}
+            onSave={handleSave}
+            onReload={handleReload}
             currentLevelName={level.name}
           />
         </div>
@@ -317,6 +348,16 @@ export default function LevelEditor({ onPlay }: Props) {
           Click to place • Drag or Arrow keys to move (Shift=1px) • R / Shift+R to rotate 10° • DEL to delete • ESC to deselect
         </p>
       </div>
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-lg shadow-lg text-sm font-medium transition-all animate-fade-in ${
+          toast.type === "success" ? "bg-green-600 text-white" :
+          toast.type === "error" ? "bg-red-600 text-white" :
+          "bg-gray-700 text-gray-100"
+        }`}>
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }

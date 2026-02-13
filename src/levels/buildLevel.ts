@@ -152,6 +152,28 @@ function addLaneGuide(
   return body;
 }
 
+function addTrampoline(
+  world: RAPIER.World,
+  cx: number,
+  cy: number,
+  hw: number,
+  hh: number,
+  rotation = 0,
+  restitution = 3.0
+) {
+  const bodyDesc = RAPIER.RigidBodyDesc.fixed()
+    .setTranslation(px(cx), px(cy))
+    .setRotation(rotation);
+  const body = world.createRigidBody(bodyDesc);
+  world.createCollider(
+    RAPIER.ColliderDesc.cuboid(px(hw), px(hh))
+      .setRestitution(restitution)
+      .setFriction(0.0),
+    body
+  );
+  return body;
+}
+
 function addCardTarget(
   world: RAPIER.World,
   cx: number,
@@ -271,6 +293,9 @@ export function buildLevel(world: RAPIER.World, config: LevelConfig): GameBodies
     jackpotTimer: 0,
     iconTargets,
     iconHitState: iconTargets.map(() => false),
+    trampolines: (config.trampolines ?? []).map((t) =>
+      addTrampoline(world, t.cx, t.cy, t.hw, t.hh, t.rotation ?? 0, t.restitution ?? 3.0)
+    ),
     
   };
 }

@@ -194,6 +194,34 @@ export function renderEditor(
     ctx.restore();
   }
 
+  // Trampolines
+  for (const t of level.trampolines ?? []) {
+    const isSelected = t.id === selectedId;
+    ctx.save();
+    ctx.translate(t.cx, t.cy);
+    ctx.rotate(t.rotation ?? 0);
+    // Spring base
+    ctx.fillStyle = isSelected ? "#4ade80" : "#22c55e";
+    ctx.fillRect(-t.hw, -t.hh, t.hw * 2, t.hh * 2);
+    // Spring coil lines
+    ctx.strokeStyle = "#15803d";
+    ctx.lineWidth = 1.5;
+    const coils = 5;
+    for (let i = 1; i < coils; i++) {
+      const lx = -t.hw + (t.hw * 2 * i) / coils;
+      ctx.beginPath();
+      ctx.moveTo(lx, -t.hh);
+      ctx.lineTo(lx, t.hh);
+      ctx.stroke();
+    }
+    if (isSelected) {
+      ctx.strokeStyle = "#60a5fa";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-t.hw, -t.hh, t.hw * 2, t.hh * 2);
+    }
+    ctx.restore();
+  }
+
   // Ball spawn
   ctx.beginPath();
   ctx.arc(level.ballSpawn.x, level.ballSpawn.y, BALL_RADIUS_PX, 0, Math.PI * 2);
@@ -238,6 +266,9 @@ export function renderEditor(
     } else if (activeTool === "laneGuide") {
       ctx.fillStyle = "#4b5563";
       ctx.fillRect(hoverPos.x - 2, hoverPos.y - 25, 4, 50);
+    } else if (activeTool === "trampoline") {
+      ctx.fillStyle = "#22c55e";
+      ctx.fillRect(hoverPos.x - 40, hoverPos.y - 6, 80, 12);
     } else if (activeTool === "ballSpawn") {
       ctx.beginPath();
       ctx.arc(hoverPos.x, hoverPos.y, BALL_RADIUS_PX, 0, Math.PI * 2);
@@ -299,6 +330,11 @@ export function hitTest(
   // Check icon targets
   for (const it of level.iconTargets ?? []) {
     if (Math.abs(x - it.cx) < 38 && Math.abs(y - it.cy) < 28) return it.id;
+  }
+
+  // Check trampolines
+  for (const t of level.trampolines ?? []) {
+    if (Math.abs(x - t.cx) < t.hw + 4 && Math.abs(y - t.cy) < t.hh + 4) return t.id;
   }
 
   // Check walls

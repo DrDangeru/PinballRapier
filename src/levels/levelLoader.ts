@@ -5,10 +5,6 @@ export interface LevelEntry {
   name: string;
 }
 
-function storageKey(filename: string) {
-  return `pinball-level:${filename}`;
-}
-
 // Fetch the manifest of level filenames from public/levels/index.json
 export async function listLevels(): Promise<LevelEntry[]> {
   try {
@@ -24,23 +20,23 @@ export async function listLevels(): Promise<LevelEntry[]> {
   }
 }
 
-// Load a level: localStorage override first, then fetch from public/levels/
+// Load a level JSON from public/levels/
 export async function loadLevel(entry: LevelEntry): Promise<LevelConfig> {
-  const saved = localStorage.getItem(storageKey(entry.filename));
-  if (saved) {
-    try { return JSON.parse(saved); } catch { /* fall through */ }
-  }
   const res = await fetch(`/levels/${entry.filename}`);
   if (!res.ok) throw new Error(`Failed to load level: ${entry.filename}`);
   return res.json();
 }
 
-// Save a level — overwrites the same filename in localStorage
-export function saveLevel(config: LevelConfig, filename: string) {
-  localStorage.setItem(storageKey(filename), JSON.stringify(config));
-}
-
-// Delete a saved override (reverts to the original JSON from public/levels/)
-export function deleteLevel(filename: string) {
-  localStorage.removeItem(storageKey(filename));
+// Save a level — writes the JSON file to public/levels/ via dev API
+export async function saveLevel(config: LevelConfig, filename: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/levels/${encodeURIComponent(filename)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(config, null, 2),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }

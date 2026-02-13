@@ -63,6 +63,16 @@ export interface IconTargetConfig {
   rotation?: number;
 }
 
+export interface TrampolineConfig {
+  id: string;
+  cx: number;
+  cy: number;
+  hw: number;
+  hh: number;
+  rotation?: number;
+  restitution?: number;
+}
+
 export interface LevelConfig {
   name: string;
   ballSpawn: { x: number; y: number };
@@ -74,9 +84,10 @@ export interface LevelConfig {
   laneGuides?: LaneGuideConfig[];
   cardTargets?: CardTargetConfig[];
   iconTargets?: IconTargetConfig[];
+  trampolines?: TrampolineConfig[];
 }
 
-export type ElementType = "wall" | "bumper" | "flipper" | "sling" | "kicker" | "laneGuide";
+export type ElementType = "wall" | "bumper" | "flipper" | "sling" | "kicker" | "laneGuide" | "trampoline";
 
 export type LevelElement =
   | ({ type: "wall" } & WallConfig)
@@ -84,4 +95,5 @@ export type LevelElement =
   | ({ type: "flipper" } & FlipperConfig)
   | ({ type: "sling" } & SlingConfig)
   | ({ type: "kicker" } & KickerConfig)
-  | ({ type: "laneGuide" } & LaneGuideConfig);
+  | ({ type: "laneGuide" } & LaneGuideConfig)
+  | ({ type: "trampoline" } & TrampolineConfig);

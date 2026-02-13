@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
-import { LevelConfig, WallConfig, BumperConfig, FlipperConfig, SlingConfig, KickerConfig, LaneGuideConfig, ElementType } from "../levels/types";
+import { LevelConfig, WallConfig, BumperConfig, FlipperConfig, SlingConfig, KickerConfig,
+   LaneGuideConfig, TrampolineConfig, ElementType } from "../levels/types";
 import { TABLE_WIDTH, WALL_THICKNESS, BUMPER_RADIUS_PX } from "../constants";
-import { listLevels, loadLevel as fetchLevelEntry, saveLevel, deleteLevel, LevelEntry } from "../levels/levelLoader";
+import { listLevels, loadLevel as fetchLevelEntry, saveLevel, LevelEntry } from "../levels/levelLoader";
 
 let nextId = 100;
 const uid = (prefix: string) => `${prefix}-${nextId++}`;
@@ -49,15 +50,20 @@ export function useEditorState() {
     setSelectedId(null);
   }, []);
 
-  const saveCurrent = useCallback(() => {
+  const saveCurrent = useCallback(async () => {
     if (!level.name.trim()) return;
-    saveLevel(level, currentFilename);
+    await saveLevel(level, currentFilename);
   }, [level, currentFilename]);
 
-  const deleteLevelEntry = useCallback(async (filename: string) => {
-    deleteLevel(filename);
-    await refreshEntries();
-  }, [refreshEntries]);
+  const reloadCurrent = useCallback(async () => {
+    const entries = await listLevels();
+    const entry = entries.find((e) => e.filename === currentFilename);
+    if (entry) {
+      const config = await fetchLevelEntry(entry);
+      setLevel(structuredClone(config));
+      setSelectedId(null);
+    }
+  }, [currentFilename]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<ElementType | "select" | "ballSpawn">("select");
 
@@ -113,6 +119,12 @@ export function useEditorState() {
     setSelectedId(lg.id);
   }, []);
 
+  const addTrampoline = useCallback((cx: number, cy: number) => {
+    const t: TrampolineConfig = { id: uid("tramp"), cx, cy, hw: 40, hh: 6, restitution: 3.0 };
+    setLevel((prev) => ({ ...prev, trampolines: [...(prev.trampolines ?? []), t] }));
+    setSelectedId(t.id);
+  }, []);
+
   const setBallSpawn = useCallback((x: number, y: number) => {
     setLevel((prev) => ({ ...prev, ballSpawn: { x, y } }));
   }, []);
@@ -131,7 +143,8 @@ export function useEditorState() {
       const laneGuides = (prev.laneGuides ?? []).map((lg) => (lg.id === id ? { ...lg, ...mv(lg.cx, lg.cy) } : lg));
       const cardTargets = (prev.cardTargets ?? []).map((ct) => (ct.id === id ? { ...ct, ...mv(ct.cx, ct.cy) } : ct));
       const iconTargets = (prev.iconTargets ?? []).map((it) => (it.id === id ? { ...it, ...mv(it.cx, it.cy) } : it));
-      return { ...prev, walls, bumpers, flippers, slings, kickers, laneGuides, cardTargets, iconTargets };
+      const trampolines = (prev.trampolines ?? []).map((t) => (t.id === id ? { ...t, ...mv(t.cx, t.cy) } : t));
+      return { ...prev, walls, bumpers, flippers, slings, kickers, laneGuides, cardTargets, iconTargets, trampolines };
     });
   }, []);
 
@@ -146,6 +159,7 @@ export function useEditorState() {
       laneGuides: (prev.laneGuides ?? []).filter((lg) => lg.id !== id),
       cardTargets: (prev.cardTargets ?? []).filter((ct) => ct.id !== id),
       iconTargets: (prev.iconTargets ?? []).filter((it) => it.id !== id),
+      trampolines: (prev.trampolines ?? []).filter((t) => t.id !== id),
     }));
     setSelectedId(null);
   }, []);
@@ -174,6 +188,7 @@ export function useEditorState() {
         laneGuides: (prev.laneGuides ?? []).map((lg) => (lg.id === id ? { ...lg, rotation: rot(lg.rotation) } : lg)),
         cardTargets: (prev.cardTargets ?? []).map((ct) => (ct.id === id ? { ...ct, rotation: rot(ct.rotation) } : ct)),
         iconTargets: (prev.iconTargets ?? []).map((it) => (it.id === id ? { ...it, rotation: rot(it.rotation) } : it)),
+        trampolines: (prev.trampolines ?? []).map((t) => (t.id === id ? { ...t, rotation: rot(t.rotation) } : t)),
       };
     });
   }, []);
@@ -197,6 +212,7 @@ export function useEditorState() {
       slings: [],
       kickers: [],
       laneGuides: [],
+      trampolines: [],
     });
     setSelectedId(null);
   }, []);
@@ -215,6 +231,7 @@ export function useEditorState() {
     addSling,
     addKicker,
     addLaneGuide,
+    addTrampoline,
     setBallSpawn,
     moveElement,
     deleteElement,
@@ -225,7 +242,8 @@ export function useEditorState() {
     loadLevel,
     loadLevelEntry,
     saveCurrent,
-    deleteLevelEntry,
+    reloadCurrent,
+    refreshEntries,
     clearLevel,
   };
 }
